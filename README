@@ -1,0 +1,11 @@
+Things that could have been done:
+
+* Added specs but never got a chance to hook up instrumentation via orchestra.
+* The results page date isn't formatted in a human friendly way.
+* Show a bit more info on the results page.
+* Style the results page.
+* Be able to unit test the api call with a fixture/with-redefs
+* Take all the address components from the form and hit google maps api to find
+  more info such as county.
+* Ideally, replace the form with google place autocomplete for better UX,
+  and getting all the locality/geocoding in one shot.

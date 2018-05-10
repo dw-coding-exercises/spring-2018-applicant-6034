@@ -1,7 +1,10 @@
 (ns my-exercise.home
   (:require [hiccup.page :refer [html5]]
             [ring.util.anti-forgery :refer [anti-forgery-field]]
-            [my-exercise.us-state :as us-state]))
+            [my-exercise.us-state :as us-state]
+            [my-exercise.turbovote :as turbovote]
+            [my-exercise.ocd :as ocd]
+            [clojure.set :as set]))
 
 (defn header [_]
   [:head
@@ -9,7 +12,9 @@
    [:meta {:name "viewport"
            :content "width=device-width, initial-scale=1.0, maximum-scale=1.0"}]
    [:title "Find my next election"]
-   [:link {:rel "stylesheet" :href "default.css"}]])
+   [:link {:rel "stylesheet" :href "default.css"}]
+   [:link {:href "https://cdnjs.cloudflare.com/ajax/libs/sortable/0.8.0/css/sortable-theme-finder.min.css" :rel  "stylesheet"}]
+   [:script {:src  "https://cdnjs.cloudflare.com/ajax/libs/sortable/0.8.0/js/sortable.min.js" :type "text/javascript"}]])
 
 (defn getting-started [_]
   [:div {:class "getting-started"}
@@ -136,3 +141,33 @@
    (header request)
    (instructions request)
    (address-form request)))
+
+
+(defn- search-results-body
+  [results]
+  [:body
+   [:table.sortable-theme-finder {:data-sortable true}
+    [:thead
+     [:th "Date"]
+     [:th "Description"]
+     [:th "URL"]]
+    [:tbody
+     (for [{:keys [date description polling-place-url-shortened]} results]
+       [:tr
+        [:td date]
+        [:td description]
+        [:td [:a {:href polling-place-url-shortened :target "_blank"} "Details"]]])]]])
+
+(defn search-results
+  [{:keys [params] :as request}]
+  (let [results (-> (assoc params :country "US")
+                    (select-keys [:country :street :street-2 :city :state :zip])
+                    (set/rename-keys {:city :place})
+                    ocd/identifiers
+                    turbovote/get-upcoming-elections)
+        body (if (seq results)
+               (search-results-body results)
+               [:body [:h3 "No results."]])]
+    (html5
+     (header request)
+     body)))
